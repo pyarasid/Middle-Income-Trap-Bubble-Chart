@@ -25,14 +25,14 @@ ui <- fluidPage(
     sidebarPanel(
       selectizeInput(inputId = "WB",
                   label = "Select one of more regions:",
-                  choices=wdiApp$WB.Region,
-                  select = c("Sub-Saharan Africa", "South Asia","Europe and central asia","Middle east and north africa",
+                  choices=levels(wdiApp$WB.Region),
+                  selected = c("Sub-Saharan Africa", "South Asia","Europe and central asia","Middle east and north africa",
                                "East asia and pacific","Latin america and caribbean","North America"),
                   multiple = TRUE),
       
       selectizeInput(inputId = "nation",
                      label="Choose one or more countries",
-                     choices=levels(wdiApp$country),
+                     choices=wdiApp$country,
                      options = list(placeholder='select a country name'),
                      multiple=TRUE)
     ),
@@ -50,7 +50,7 @@ server <- function(input, output) {
   })
   #create the bubble chart
   output$scatterplot <- renderPlotly({
-  ggplotly(ggplot(data = plotdata(),mapping = aes(x=GNI, y=GDP, colour=WB.Region))+
+  ggplotly(ggplot(data = plotdata(),mapping = aes(x=GNI, y=GDP, group=WB.Region, colour=WB.Region))+
       geom_point(aes(size=POP,frame=Years, ids=country), alpha=0.7)
   )
   })
