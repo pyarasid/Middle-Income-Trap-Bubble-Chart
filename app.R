@@ -18,7 +18,6 @@ wdiApp$GDP <- as.numeric(wdiApp$GDP)
 wdiApp$GNI <- as.numeric(wdiApp$GNI)
 wdiApp$POP <- as.numeric(wdiApp$POP)
 
-
 #======================================================
 #to get the distict values in a column
 #(wdiApp %>% distinct(WB.Region))$WB.Region
