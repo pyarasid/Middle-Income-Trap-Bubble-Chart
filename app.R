@@ -65,6 +65,40 @@ server <- function(input, output){
                theme_bw())
   })
 
+  observeEvent(input$nation,{
+    
+    reactivestatement1 <- reactive({
+      cc <- wdiApp[complete.cases(wdiApp),]
+      z <- subset(cc, WB.Region %in% input$WB | cc$country %in% input$nation) 
+      return(z)
+    })
+    reactivestatement2 <- reactive({
+      cc <- wdiApp[complete.cases(wdiApp),]
+      z <- subset(cc, cc$country %in% input$nation)
+      return(z)
+    })
+    #create the bubble chart
+    if (length(input$nation)>0){
+      output$scatterplot <- renderPlotly({
+        ggplotly(ggplot(data = reactivestatement1(),mapping = aes(x=GNI, y=GDP, color=WB.Region))+
+                   geom_point(aes(size=POP,frame=Years, ids=country), alpha=0.2) +
+                   geom_point(data = reactivestatement2(),aes(size=POP,frame=Years, ids=country, color=WB.Region))+
+                   geom_text(data = reactivestatement2(), aes(label=country,frame=Years, ids=country), nudge_x = 0, nudge_y =0.5)+
+                   scale_x_log10(breaks=c(995,3895, 12055), labels=comma)+scale_y_log10(labels=comma)+
+                   theme_bw())
+              
+        })
+    }
+    
+    else if (input$nation==FALSE) {
+      output$scatterplot <- renderPlotly({
+        ggplotly(ggplot(data = reactivestatement1(),mapping = aes(x=GNI, y=GDP, color=input$WB))+
+                   geom_point(aes(size=POP,frame=Years, ids=country), alpha=0.7)+
+                   scale_x_log10(breaks=c(995,3895, 12055), labels=comma)+scale_y_log10(labels=comma)+
+                   theme_bw())
+      })
+    }
+  })  
 }
 
 #Create the shiny app object
