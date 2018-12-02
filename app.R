@@ -6,6 +6,7 @@ library(shiny)
 library(dplyr)
 library(scales)
 library(readxl)
+library(ggrepel)
 
 wdiApp <- read_excel("wdiApp.xlsx")
 
@@ -27,8 +28,6 @@ wdiApp$POP <- as.numeric(wdiApp$POP)
 #=========================================================
 
 #create the app =========================================
-#select = 
-#ui===================================================
 
 ui <- fluidPage(
   sidebarLayout(
@@ -58,33 +57,40 @@ server <- function(input, output){
     z <- subset(cc, WB.Region %in% input$WB | cc$country %in% input$nation)
     return(z)
   })
+  #create the bubble chart
   output$scatterplot <- renderPlotly({
-    ggplotly(ggplot(data = plotdata(), mapping = aes(x=GNI, y=GDP, color=WB.Region))+
+    ggplotly(ggplot(data = plotdata(), mapping = aes(x=GNI, y=GDP/1000000000, color=WB.Region))+
+               geom_vline(xintercept = c(995, 3895, 12055), size=0.3, color="yellow")+
                geom_point(aes(size=POP,frame=Years, ids=country), alpha=0.7) +
                scale_x_log10(breaks=c(995,3895, 12055), labels=comma)+scale_y_log10(labels=comma)+
+               labs(x="GNI per capita, (current US$)", y="GDP (constant 2010 US$), in billions", color="World Bank Region")+
                theme_bw())
   })
 
   observeEvent(input$nation,{
     
     reactivestatement1 <- reactive({
+     
       cc <- wdiApp[complete.cases(wdiApp),]
       z <- subset(cc, WB.Region %in% input$WB | cc$country %in% input$nation) 
       return(z)
     })
     reactivestatement2 <- reactive({
+      
       cc <- wdiApp[complete.cases(wdiApp),]
       z <- subset(cc, cc$country %in% input$nation)
       return(z)
     })
-    #create the bubble chart
+    
     if (length(input$nation)>0){
       output$scatterplot <- renderPlotly({
-        ggplotly(ggplot(data = reactivestatement1(),mapping = aes(x=GNI, y=GDP, color=WB.Region))+
+        ggplotly(ggplot(data = reactivestatement1(),mapping = aes(x=GNI, y=GDP/1000000000, color=WB.Region))+
+                   geom_vline(xintercept = c(995, 3895, 12055), size=0.3, color="yellow")+
                    geom_point(aes(size=POP,frame=Years, ids=country), alpha=0.2) +
                    geom_point(data = reactivestatement2(),aes(size=POP,frame=Years, ids=country, color=WB.Region))+
-                   geom_text(data = reactivestatement2(), aes(label=country,frame=Years, ids=country), nudge_x = 0, nudge_y =0.5)+
+                   geom_text(data = reactivestatement2(), aes(label=country,frame=Years, ids=country), nudge_x = 0, nudge_y = 0.3)+
                    scale_x_log10(breaks=c(995,3895, 12055), labels=comma)+scale_y_log10(labels=comma)+
+                   labs(x="GNI per capita, (current US$)", y="GDP (constant 2010 US$), in billions", color="World Bank Region")+
                    theme_bw())
               
         })
@@ -92,9 +98,11 @@ server <- function(input, output){
     
     else if (input$nation==FALSE) {
       output$scatterplot <- renderPlotly({
-        ggplotly(ggplot(data = reactivestatement1(),mapping = aes(x=GNI, y=GDP, color=input$WB))+
+        ggplotly(ggplot(data = reactivestatement1(),mapping = aes(x=GNI, y=GDP/1000000000, color=input$WB))+
+                   geom_vline(xintercept = c(995, 3895, 12055), size=0.3, color="yellow")+
                    geom_point(aes(size=POP,frame=Years, ids=country), alpha=0.7)+
                    scale_x_log10(breaks=c(995,3895, 12055), labels=comma)+scale_y_log10(labels=comma)+
+                   labs(x="GNI per capita, (current US$)", y="GDP (constant 2010 US$, in billions)", color="World Bank Region")+
                    theme_bw())
       })
     }
