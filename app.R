@@ -7,8 +7,9 @@ library(dplyr)
 library(scales)
 library(readxl)
 
-#some manipuation
+wdiApp <- read_excel("wdiApp.xlsx")
 
+#some manipuation
 wdiApp$country <- as.factor(wdiApp$country)
 wdiApp$WB.Region <- as.factor(wdiApp$WB.Region)
 wdiApp$Years <- as.integer(wdiApp$Years)
@@ -16,7 +17,7 @@ wdiApp$GDP <- as.numeric(wdiApp$GDP)
 wdiApp$GNI <- as.numeric(wdiApp$GNI)
 wdiApp$POP <- as.numeric(wdiApp$POP)
 
-wdiApp <- read_excel("wdiApp.xlsx")
+
 #======================================================
 #to get the distict values in a column
 #(wdiApp %>% distinct(WB.Region))$WB.Region
@@ -34,8 +35,8 @@ ui <- fluidPage(
     sidebarPanel(
       selectizeInput(inputId = "WB",
                   label = "Select one of more regions:",
-                  choices=unique(wdiApp$WB.Region),
-                  select=c("Sub-Saharan Africa", "South Asia","Europe and central asia","Middle east and north africa",
+                  choices=levels(wdiApp$WB.Region),
+                  selected=c("Sub-Saharan Africa", "South Asia","Europe and central asia","Middle east and north africa",
                              "East asia and pacific","Latin america and caribbean","North America"),
                   multiple = TRUE),
       
@@ -46,50 +47,25 @@ ui <- fluidPage(
                      multiple=TRUE)
     ),
     mainPanel(
-      plotlyOutput(outputId = "scatterplot")
+      plotlyOutput(outputId = "scatterplot", width = "100%", height = "550px")
     )
   )
 )
 
-server <- function(input, output) {
- observeEvent({
-   input$nation
-   input$WB
- }, {
-   #create reactive functions
+server <- function(input, output){
   plotdata <- reactive({
-    cc <- wdiApp[complete.cases(wdiApp),]
-   z <- subset(cc, WB.Region %in% input$WB | cc$country %in% input$nation) 
-   return(z)
-  })
-  plotdata1 <- reactive({
-    cc <- wdiApp[complete.cases(wdiApp),]
-    z <- subset(cc, cc$country %in% input$nation)
+    cc <-  wdiApp[complete.cases(wdiApp),] 
+    z <- subset(cc, WB.Region %in% input$WB | cc$country %in% input$nation)
     return(z)
   })
-  #create the bubble chart
-  if (length(input$nation)>0){
   output$scatterplot <- renderPlotly({
-  ggplotly(ggplot(data = plotdata(),mapping = aes_string(x=GNI, y=GDP, color=input$WB))+
-      geom_point(aes_string(size=POP,frame=Years, ids=country), alpha=0.2) +
-        geom_point(data = plotdata1(),aes_string(size=POP,frame=Years, ids=country, color=input$WB))+
-        geom_text(data = plotdata1(), aes_string(label=country,frame=Years, ids=country))+
-        scale_x_log10(breaks=c(995,3895, 12055), labels=comma)+scale_y_log10(labels=comma)+
-      theme_bw()
-     
-    )})
-  }
-  
-  else if (length(input$nation==0)) {
-    output$scatterplot <- renderPlotly({
-      ggplotly(ggplot(data = plotdata(),mapping = aes_string(x=GNI, y=GDP, color=input$WB))+
-                 geom_point(aes_string(size=POP,frame=Years, ids=country), alpha=0.7)+
-                 scale_x_log10(breaks=c(995,3895, 12055), labels=comma)+scale_y_log10(labels=comma)+
-                 theme_bw()
-    )
+    ggplotly(ggplot(data = plotdata(), mapping = aes(x=GNI, y=GDP, color=WB.Region))+
+               geom_point(aes(size=POP,frame=Years, ids=country), alpha=0.7) +
+               scale_x_log10(breaks=c(995,3895, 12055), labels=comma)+scale_y_log10(labels=comma)+
+               theme_bw())
   })
- }
-})}
+
+}
 
 #Create the shiny app object
 shinyApp(ui=ui, server=server)
